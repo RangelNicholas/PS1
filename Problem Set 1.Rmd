@@ -1,0 +1,122 @@
+---
+title: "Problem Set 1"
+author: "Nicholas Rangel"
+date: "2025-01-28"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.align = 'center',
+  message = FALSE,
+  warning = FALSE
+)
+
+library(tidyverse)
+library(knitr)
+```
+
+# My Responses
+
+1. For this problem set, I chose Angola. There are 1200 respondents in the survey and the interviews were conducted between February and March of 2022.
+
+```{r}
+## commands used: 
+library(haven)
+data <- read_sav("/Users/nicholasrangel/Data Analysis Class/Week 3/AngolaAfrobarometer.sav")
+summary(data$RESPNO) 
+summary(data$DATEINTR)
+```
+
+2. The median age of the respondents is 30, while the mean is 34.29. There is approximately an equal amount of male and female respondents, as the mean is 1.503 (where 1 indicates a male and 2 indicates a female). Regarding language spoken, 970 of the 1200 respondents spoke Portuguese, 71 respondents spoke Umbundu, 67 spoke Chokwe, and a combined 92 respondents spoke 8 other languages. The number of adults in the respondent's household had a mean of 2.74. 
+
+```{r}
+## commands used: 
+summary(data$Q1)
+summary(data$THISINT)
+table(data$Q2)
+summary(data$ADULT_CT)
+
+## Bonus: Table showing just the means of Q1, THISINT, ADULT_CT, and median of Q2
+mean_table <- tibble(
+  Variable = c("Q1", "THISINT", "Q2", "ADULT_CT"),
+  Mean = c(
+    mean(data$Q1, na.rm = TRUE),
+    mean(data$THISINT, na.rm = TRUE),
+    median(data$Q2, na.rm = TRUE),
+    mean(data$ADULT_CT, na.rm = TRUE)
+  )
+)
+```
+
+3. Q78A in the dataset refers to the following question: Do you think that the economic and political influence of each of the following countries on Angola is mostly positive, mostly negative, or haven’t you heard enough to say: China? 
+
+The values have the following meanings: 1=Very negative, 2=Somewhat negative, 3=Neither positive nor negative, 4=Somewhat positive, 5=Very positive, 8=Refused, 9=Don’t know, -1=Missing.
+
+Creating a frequency table with all of the aforementioned values would not accurately represent people's opinions, so I filtered out respondents who refused to answer (8), those who did not have an answer (9), and missing responses (-1), keeping only the 1-5 responses. 
+
+Findings show that on average, respondents see Chinese economic and political influence as somewhat positive, as the median is 4, and the mean is 3.6. This eliminated 334 respondents who did not have an answer (9) and 31 respondents who refused to answer (8). It is important to note that the "don't know" category (9) received the most votes, indicating that there is a large amount of people who did not feel confident enough in providing a solid answer.
+
+```{r}
+## commands used:
+summary(data$Q78A)
+library(dplyr)
+filteredQ78a <- data %>%
+  filter(Q78A != 8, Q78A != 9, Q78A != -1) ## excludes responses (8), (9), (-1)
+
+summary(filteredQ78a$Q78A) ## shows Min, Mean, Max for filtered responses
+table(filteredQ78a$Q78A) ## shows exact values each category received as votes
+table(data$Q78A) ## shows exact values of the excluded responses
+
+filteredQ78a %>%
+  count(Q78A) %>%
+  mutate(percentage = n / sum(n) * 100) ## relative frequency table for Q78A responses excluding answers (8), (9), (-1)
+
+data %>%
+  count(Q78A) %>%
+  mutate(percentage = n / sum(n) * 100) ## relative frequency table for Q78A responses including the previously excluded answers for comparison
+
+```
+
+4. Q78B in the dataset refers to the following question: Do you think that the economic and political influence of each of the following countries on Angola is mostly positive, mostly negative, or haven’t you heard enough to say: United States?
+
+The values have the following meanings: 1=Very negative, 2=Somewhat negative, 3=Neither positive nor negative, 4=Somewhat positive, 5=Very positive, 8=Refused, 9=Don’t know, -1=Missing.
+
+Creating a frequency table with all of the aforementioned values would not accurately represent people's opinions, so I filtered out respondents who refused to answer (8), those who did not have an answer (9), and missing responses (-1), keeping only the 1-5 responses.
+
+Findings show that on average, respondents see American economic and political influence as somewhat positive, as the median is 4, and the mean is 3.8. This eliminated 407 respondents who did not have an answer (9) and 34 respondents who refused to answer (8). It is important to note that the "don't know" category (9) received the most votes, indicating that there is a large amount of people who did not feel confident enough in providing a solid answer.
+
+```{r}
+filteredQ78b <- data %>%
+  filter(Q78B != 8, Q78B != 9, Q78B != -1) ## excludes responses (8), (9), (-1)
+
+summary(filteredQ78b$Q78B) ## shows Min, Mean, Max for filtered responses
+table(filteredQ78b$Q78B) ## shows exact values each category received as votes
+table(data$Q78B) ## shows exact values of the excluded responses
+
+filteredQ78b %>%
+  count(Q78B) %>%
+  mutate(percentage = n / sum(n) * 100) ## relative frequency table for Q78B responses excluding answers (8), (9), (-1)
+
+data %>%
+  count(Q78B) %>%
+  mutate(percentage = n / sum(n) * 100) ## relative frequency table for Q78B responses including the previously excluded answers for comparison
+
+```
+
+5. After using the cleaning up the data to explude dk/na and refusals, I conducted a paired t-test to evaluate the difference between the two perceptions (US and China). The results show that the t-stat is -4.21, meaning that there is generally a strong difference between the two. The p-value being small (-0.00087) further emphasizes this as being statistically significant.
+
+```{r}
+
+data1 =
+  data %>%
+  mutate(
+    across(
+      Q78A:Q78B, 
+      ~ if_else(.x %in% 1:5, .x, NA))) ## this cleans the data of dk/na and refusals
+
+t.test(data1$Q78A, data1$Q78B, paired = TRUE)
+```
